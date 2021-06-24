@@ -24,6 +24,7 @@ namespace TiendaServicios.Api.Autor.Aplicacion
             public Manejador(ContextoAutor contexto, IMapper mapper)
             {
                 _contexto = contexto;
+                _mapper = mapper;
             }
             public async  Task<AutorLibroDto> Handle(autor request, CancellationToken cancellationToken)
             {

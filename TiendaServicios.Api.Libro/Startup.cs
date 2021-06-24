@@ -15,6 +15,8 @@ using System.Linq;
 using System.Threading.Tasks;
 using TiendaServicios.Api.Libro.Aplicacion;
 using TiendaServicios.Api.Libro.Persistencia;
+using TiendaServicios.RabbitMQ.Bus.BusRabbit;
+using TiendaServicios.RabbitMQ.Bus.Implement;
 
 namespace TiendaServicios.Api.Libro
 {
@@ -30,6 +32,18 @@ namespace TiendaServicios.Api.Libro
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            /* Inyectando objetos 
+                para poder inyectarlo
+             */
+            //services.AddTransient<IRabbitEventBus, RabbitEventBus>();
+
+            /* Inyectando IRabbitEventBus e implementando el dependency injection */
+            services.AddSingleton<IRabbitEventBus, RabbitEventBus>(sp =>
+            {
+                var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+                return new RabbitEventBus(sp.GetService<IMediator>(), scopeFactory);
+            });
+
             services.AddDbContext<ContextoLibreria>(options =>
             {
                 options.UseSqlServer(Configuration.GetConnectionString("ConexionDB"));
@@ -42,6 +56,7 @@ namespace TiendaServicios.Api.Libro
             /*Instancia de mediatR*/
             services.AddMediatR(typeof(Nuevo.Manejador).Assembly);
             services.AddAutoMapper(typeof(GetLibroById.Manejador));
+
 
 
         }

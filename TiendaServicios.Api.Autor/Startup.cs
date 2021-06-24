@@ -14,7 +14,13 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using TiendaServicios.Api.Autor.Aplicacion;
+using TiendaServicios.Api.Autor.ManejadorRabbit;
 using TiendaServicios.Api.Autor.Persistencia;
+using TiendaServicios.Mensajeria.Email.SendGridLibreria.Implement;
+using TiendaServicios.Mensajeria.Email.SendGridLibreria.Interface;
+using TiendaServicios.RabbitMQ.Bus.BusRabbit;
+using TiendaServicios.RabbitMQ.Bus.EventoQueue;
+using TiendaServicios.RabbitMQ.Bus.Implement;
 
 namespace TiendaServicios.Api.Autor
 {
@@ -30,6 +36,21 @@ namespace TiendaServicios.Api.Autor
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            /* Inyectando IRabbitEventBus e implementando el dependency injection */
+            services.AddSingleton<IRabbitEventBus, RabbitEventBus>(sp =>
+            {
+                var scopeFactory = sp.GetRequiredService<IServiceScopeFactory>();
+                return new RabbitEventBus(sp.GetService < IMediator>(), scopeFactory);
+            });
+            /* Inyectnando los services de IsendGrid */
+            services.AddSingleton<ISendGridEnviar, SendGridEnviar>();
+
+            services.AddTransient<EmailEventoManejador>();
+
+            /* Registrando el las clases del evento del RabbitMQ
+             * Implementando IEventoManejador */
+
+            services.AddTransient<IEventoManejador<EmailEventoQueue>, EmailEventoManejador>();
             services.AddDbContext<ContextoAutor>(options =>
             {
                 options.UseNpgsql(Configuration.GetConnectionString("ConexionDatabase"));
@@ -67,6 +88,13 @@ namespace TiendaServicios.Api.Autor
             {
                 endpoints.MapControllers();
             });
+
+            /* Registrar el eventobus  */
+            var eventBus = app.ApplicationServices.GetRequiredService<IRabbitEventBus>();
+            /* Suscribirlo al EmailEventoQueue, el cual es el evento con el mensaje */
+
+            /* Objeto que fluye en el tubo de RabbitMQ con el mensaje | Clase que va manejar ese evento (escucha)  */
+            eventBus.Subscribe<EmailEventoQueue, EmailEventoManejador>();
         }
     }
 }

@@ -31,14 +31,12 @@ namespace TiendaServicios.Api.CarritoCompra
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            /* Instancia de la Interface */
+            services.AddScoped<ILibrosService, LibrosService>();
+
             services.AddDbContext<CarritoContext>(options =>
             {
                 options.UseMySQL(Configuration.GetConnectionString("ConexionDataBase"));
-            });
-            services.AddControllers();
-            services.AddSwaggerGen(c =>
-            {
-                c.SwaggerDoc("v1", new OpenApiInfo { Title = "TiendaServicios.Api.CarritoCompra", Version = "v1" });
             });
             /* Inyectando el mediatR */
             services.AddMediatR(typeof(Nuevo.Manejador).Assembly);
@@ -48,8 +46,11 @@ namespace TiendaServicios.Api.CarritoCompra
                 /* Obteniendo la URL de appSettings.Json */
                 config.BaseAddress = new Uri(Configuration["Services:Libros"]);
             });
-            /* Instancia de la Interface */
-            services.AddScoped<ILibrosService, LibrosService>();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "TiendaServicios.Api.CarritoCompra", Version = "v1" });
+            });
+            services.AddControllers();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
